@@ -1,0 +1,163 @@
+<header class="page-head">
+  <div>
+    <h1>Clients</h1>
+    <p class="muted">
+      @if (meta(); as m) {
+        {{ number(m.total) }} client(s) enregistré(s)
+      } @else {
+        Chargement…
+      }
+    </p>
+  </div>
+
+  @if (auth.can('clients.create')) {
+    <button type="button" class="btn btn-primary" (click)="openPanel()">Nouveau client</button>
+  }
+</header>
+
+<div class="toolbar">
+  <input
+    type="search"
+    placeholder="Rechercher un nom, un code, un email…"
+    [value]="searchTerm()"
+    (change)="submitSearch($event)"
+    aria-label="Rechercher un client"
+  />
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement des clients…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Client</th>
+          <th>Ville</th>
+          <th>Contact</th>
+          <th class="right">Plafond</th>
+          <th class="center">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (client of clients(); track client.id) {
+          <tr>
+            <td><code>{{ client.code }}</code></td>
+            <td>
+              <strong>{{ client.name }}</strong>
+              @if (client.company_name) {
+                <small class="muted">{{ client.company_name }}</small>
+              }
+            </td>
+            <td>{{ client.city ?? '—' }}</td>
+            <td>
+              {{ client.email ?? '—' }}
+              @if (client.phone) {
+                <small class="muted">{{ client.phone }}</small>
+              }
+            </td>
+            <td class="right">{{ money(client.credit_limit) }}</td>
+            <td class="center">
+              <span class="badge" [class.inactive]="!client.is_active">
+                {{ client.is_active ? 'Actif' : 'Inactif' }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">Aucun client ne correspond à la recherche.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (panelOpen()) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel" role="dialog" aria-label="Nouveau client">
+    <header>
+      <h2>Nouveau client</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <label>
+        <span>Nom *</span>
+        <input formControlName="name" placeholder="Atlas Distribution" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <small class="field-error">Le nom est obligatoire.</small>
+        }
+      </label>
+
+      <label>
+        <span>Raison sociale</span>
+        <input formControlName="company_name" />
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Email</span>
+          <input type="email" formControlName="email" />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <small class="field-error">Adresse email invalide.</small>
+          }
+        </label>
+
+        <label>
+          <span>Téléphone</span>
+          <input formControlName="phone" />
+        </label>
+      </div>
+
+      <div class="row">
+        <label>
+          <span>Ville</span>
+          <input formControlName="city" />
+        </label>
+
+        <label>
+          <span>ICE</span>
+          <input formControlName="ice" />
+        </label>
+      </div>
+
+      <label>
+        <span>Plafond de crédit (MAD)</span>
+        <input type="number" min="0" formControlName="credit_limit" />
+      </label>
+
+      <footer class="panel-actions">
+        <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </footer>
+    </form>
+  </aside>
+}
