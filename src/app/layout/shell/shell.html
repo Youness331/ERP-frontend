@@ -1,0 +1,46 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">EP</span>
+      <div class="brand-text">
+        <strong>ERP Opérations</strong>
+        <small>Gestion des opérations</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      @for (item of navItems(); track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      } @empty {
+        <p class="nav-empty">Aucun module accessible.</p>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <span>{{ auth.user()?.role?.label ?? 'Utilisateur' }}</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        @if (auth.user(); as user) {
+          <span class="hello">Bonjour, {{ user.name }}</span>
+          <span class="company">{{ '@' }}{{ user.email }}</span>
+        }
+      </div>
+
+      <div class="topbar-actions">
+        <span class="avatar" [title]="auth.user()?.name ?? ''">{{ initials() }}</span>
+        <button type="button" class="btn btn-ghost" (click)="logout()">Déconnexion</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
