@@ -10,4 +10,5 @@ export interface NavItem {
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Tableau de bord', icon: '◧', route: '/dashboard', permission: 'dashboard.view' },
+  { label: 'Clients', icon: '👥', route: '/clients', permission: 'clients.view' },
 ];
