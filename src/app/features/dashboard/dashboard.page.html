@@ -1,0 +1,130 @@
+@if (loading()) {
+  <p class="state">Chargement du tableau de bord…</p>
+} @else if (error()) {
+  <div class="state error">
+    <p>{{ error() }}</p>
+    <button type="button" class="btn btn-ghost" (click)="reload()">Réessayer</button>
+  </div>
+} @else if (summary(); as s) {
+  <header class="page-head">
+    <div>
+      <h1>Tableau de bord</h1>
+      <p class="muted">Période du {{ date(s.period.from) }} au {{ date(s.period.to) }}</p>
+    </div>
+    <span class="company-chip">{{ s.company.name }}</span>
+  </header>
+
+  <section class="kpis">
+    <article class="kpi">
+      <span class="kpi-label">CA du mois</span>
+      <strong class="kpi-value">{{ money(s.revenue.current_month, s.currency.symbol) }}</strong>
+      <span
+        class="kpi-foot"
+        [class.up]="(s.revenue.growth_percent ?? 0) >= 0"
+        [class.down]="(s.revenue.growth_percent ?? 0) < 0"
+      >
+        {{ percent(s.revenue.growth_percent) }} vs mois précédent
+      </span>
+    </article>
+
+    <article class="kpi">
+      <span class="kpi-label">Encaissements du mois</span>
+      <strong class="kpi-value">{{ money(s.revenue.collected_this_month, s.currency.symbol) }}</strong>
+      <span class="kpi-foot">Sur {{ number(s.sales.orders_this_month) }} commande(s)</span>
+    </article>
+
+    <article class="kpi">
+      <span class="kpi-label">Créances clients</span>
+      <strong class="kpi-value">{{ money(s.receivables.outstanding, s.currency.symbol) }}</strong>
+      <span class="kpi-foot" [class.down]="s.receivables.overdue_amount > 0">
+        {{ number(s.receivables.overdue_count) }} facture(s) en retard
+      </span>
+    </article>
+
+    <article class="kpi">
+      <span class="kpi-label">Valeur du stock</span>
+      <strong class="kpi-value">{{ money(s.inventory.stock_value, s.currency.symbol) }}</strong>
+      <span class="kpi-foot" [class.down]="s.inventory.low_stock_count > 0">
+        {{ number(s.inventory.low_stock_count) }} produit(s) sous le seuil
+      </span>
+    </article>
+  </section>
+
+  <section class="panels">
+    <article class="panel">
+      <h2>Ventes des 12 derniers mois</h2>
+
+      <div class="chart" role="img" aria-label="Évolution du chiffre d'affaires">
+        @for (point of s.charts.sales_last_12_months; track point.month) {
+          <div class="bar-wrapper" [title]="point.label + ' : ' + money(point.total, s.currency.symbol)">
+            <div class="bar" [style.height]="barHeight(point.total)"></div>
+            <span class="bar-label">{{ point.label.slice(0, 3) }}</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Activité</h2>
+      <dl class="stats">
+        <div><dt>Commandes ouvertes</dt><dd>{{ number(s.sales.open_orders) }}</dd></div>
+        <div><dt>À livrer</dt><dd>{{ number(s.sales.to_deliver) }}</dd></div>
+        <div><dt>Achats en attente</dt><dd>{{ number(s.purchasing.pending_orders) }}</dd></div>
+        <div><dt>Clients</dt><dd>{{ number(s.partners.clients) }}</dd></div>
+        <div><dt>Fournisseurs</dt><dd>{{ number(s.partners.suppliers) }}</dd></div>
+        <div><dt>Produits</dt><dd>{{ number(s.inventory.product_count) }}</dd></div>
+      </dl>
+    </article>
+  </section>
+
+  <section class="panels">
+    <article class="panel">
+      <h2>Dernières factures</h2>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Client</th>
+            <th>Date</th>
+            <th>Statut</th>
+            <th class="right">Total</th>
+            <th class="right">Reste dû</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (invoice of s.recent_invoices; track invoice.id) {
+            <tr>
+              <td><strong>{{ invoice.reference }}</strong></td>
+              <td>{{ invoice.client ?? '—' }}</td>
+              <td>{{ date(invoice.issue_date) }}</td>
+              <td><span class="status" [attr.data-status]="invoice.status">{{ invoice.status_label }}</span></td>
+              <td class="right">{{ money(invoice.total, s.currency.symbol) }}</td>
+              <td class="right">{{ money(invoice.balance_due, s.currency.symbol) }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">Aucune facture pour le moment.</td></tr>
+          }
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel">
+      <h2>Stock à surveiller</h2>
+
+      <ul class="list">
+        @for (product of s.low_stock_products; track product.id) {
+          <li>
+            <span>
+              <strong>{{ product.name }}</strong>
+              <small class="muted">{{ product.sku }}</small>
+            </span>
+            <span class="qty">{{ number(product.quantity) }} / {{ number(product.reorder_level) }}</span>
+          </li>
+        } @empty {
+          <li class="empty">Tous les produits sont au-dessus du seuil.</li>
+        }
+      </ul>
+    </article>
+  </section>
+}
