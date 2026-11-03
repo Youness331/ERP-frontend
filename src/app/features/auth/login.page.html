@@ -1,0 +1,42 @@
+<div class="login">
+  <div class="login-card">
+    <div class="brand">
+      <span class="brand-mark">EP</span>
+      <div>
+        <strong>ERP Opérations</strong>
+        <small>Gestion des opérations</small>
+      </div>
+    </div>
+
+    <h1>Connexion</h1>
+    <p class="muted">Accédez à votre espace de gestion.</p>
+
+    @if (error()) {
+      <p class="alert" role="alert">{{ error() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label>
+        <span>Email</span>
+        <input type="email" formControlName="email" autocomplete="email" placeholder="vous@entreprise.ma" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <small class="field-error">Adresse email invalide.</small>
+        }
+      </label>
+
+      <label>
+        <span>Mot de passe</span>
+        <input type="password" formControlName="password" autocomplete="current-password" placeholder="••••••••" />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <small class="field-error">Mot de passe requis.</small>
+        }
+      </label>
+
+      <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+        {{ submitting() ? 'Connexion…' : 'Se connecter' }}
+      </button>
+    </form>
+
+    <p class="hint">Compte de démonstration : <code>admin@erp.test</code> · <code>Password123!</code></p>
+  </div>
+</div>

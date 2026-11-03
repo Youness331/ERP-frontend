@@ -1,1 +1,80 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --erp-bg: #f4f6fa;
+  --erp-surface: #ffffff;
+  --erp-border: #e2e8f0;
+  --erp-text: #0f172a;
+  --erp-muted: #64748b;
+  --erp-primary: #1d4ed8;
+  --erp-primary-dark: #1e3a8a;
+  --erp-danger: #b91c1c;
+  --erp-success: #047857;
+  --erp-radius: 10px;
+  --erp-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--erp-bg);
+  color: var(--erp-text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0 0 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: var(--erp-primary);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: var(--erp-primary-dark);
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--erp-border);
+  color: var(--erp-muted);
+
+  &:hover:not(:disabled) {
+    border-color: var(--erp-primary);
+    color: var(--erp-primary);
+  }
+}
+
+.muted {
+  color: var(--erp-muted);
+}
