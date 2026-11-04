@@ -5,6 +5,7 @@ import { permissionGuard } from './core/auth/permission.guard';
 import { LoginPage } from './features/auth/login.page';
 import { ClientsPage } from './features/clients/clients.page';
 import { DashboardPage } from './features/dashboard/dashboard.page';
+import { ProductsPage } from './features/products/products.page';
 import { Shell } from './layout/shell/shell';
 
 export const routes: Routes = [
@@ -26,6 +27,12 @@ export const routes: Routes = [
         component: ClientsPage,
         title: 'Clients',
         canActivate: [permissionGuard('clients.view')],
+      },
+      {
+        path: 'products',
+        component: ProductsPage,
+        title: 'Produits',
+        canActivate: [permissionGuard('products.view')],
       },
     ],
   },
