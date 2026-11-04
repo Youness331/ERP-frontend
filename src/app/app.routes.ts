@@ -6,6 +6,7 @@ import { LoginPage } from './features/auth/login.page';
 import { ClientsPage } from './features/clients/clients.page';
 import { DashboardPage } from './features/dashboard/dashboard.page';
 import { ProductsPage } from './features/products/products.page';
+import { StockPage } from './features/stock/stock.page';
 import { Shell } from './layout/shell/shell';
 
 export const routes: Routes = [
@@ -33,6 +34,12 @@ export const routes: Routes = [
         component: ProductsPage,
         title: 'Produits',
         canActivate: [permissionGuard('products.view')],
+      },
+      {
+        path: 'stock',
+        component: StockPage,
+        title: 'Stock',
+        canActivate: [permissionGuard('stock.view')],
       },
     ],
   },
