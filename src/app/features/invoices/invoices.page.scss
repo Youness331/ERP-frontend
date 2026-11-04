@@ -1,0 +1,262 @@
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+
+  select {
+    padding: 9px 12px;
+    border: 1px solid var(--erp-border);
+    border-radius: 8px;
+    font: inherit;
+    background: var(--erp-surface);
+  }
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--erp-muted);
+  font-weight: 500;
+}
+
+.table-card {
+  background: var(--erp-surface);
+  border: 1px solid var(--erp-border);
+  border-radius: var(--erp-radius);
+  box-shadow: var(--erp-shadow);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--erp-muted);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--erp-border);
+    background: #f8fafc;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+
+    small {
+      display: block;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+  }
+
+  tbody tr:hover {
+    background: #f8fafc;
+  }
+
+  .right {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .due {
+    color: var(--erp-danger);
+    font-weight: 600;
+  }
+
+  .overdue {
+    color: var(--erp-danger);
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #eef2ff;
+  color: var(--erp-primary-dark);
+  white-space: nowrap;
+
+  &[data-status='draft'] {
+    background: #f1f5f9;
+    color: var(--erp-muted);
+  }
+
+  &[data-status='paid'] {
+    background: #ecfdf5;
+    color: var(--erp-success);
+  }
+
+  &[data-status='partially_paid'] {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &[data-status='overdue'],
+  &[data-status='cancelled'] {
+    background: #fef2f2;
+    color: var(--erp-danger);
+  }
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--erp-muted);
+}
+
+.state {
+  padding: 28px;
+  text-align: center;
+  color: var(--erp-muted);
+
+  &.error {
+    color: var(--erp-danger);
+  }
+}
+
+.empty {
+  text-align: center;
+  color: var(--erp-muted);
+  padding: 20px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 10;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  background: var(--erp-surface);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  overflow-y: auto;
+  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.18);
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+  }
+
+  form {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  label {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--erp-muted);
+
+    input,
+    select {
+      padding: 9px 11px;
+      border: 1px solid var(--erp-border);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+      background: #fff;
+    }
+  }
+}
+
+.summary {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--erp-muted);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.close {
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--erp-muted);
+}
+
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.alert {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--erp-danger);
+  font-size: 13px;
+}
+
+.field-error {
+  color: var(--erp-danger);
+  font-weight: 500;
+}
