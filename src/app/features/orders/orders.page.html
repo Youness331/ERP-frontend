@@ -210,9 +210,9 @@
     </table>
 
     <div class="totals">
-      <div><span>Sous-total HT</span><strong>{{ money(subtotal()) }}</strong></div>
-      <div><span>TVA</span><strong>{{ money(taxTotal()) }}</strong></div>
-      <div class="grand"><span>Total TTC</span><strong>{{ money(total()) }}</strong></div>
+      <div><span>Sous-total HT</span><strong>{{ money(totals().subtotal) }}</strong></div>
+      <div><span>TVA</span><strong>{{ money(totals().tax) }}</strong></div>
+      <div class="grand"><span>Total TTC</span><strong>{{ money(totals().total) }}</strong></div>
     </div>
 
     <footer class="panel-actions">
