@@ -1,0 +1,213 @@
+<header class="page-head">
+  <div>
+    <h1>Rapprochement bancaire</h1>
+    <p class="muted">Rapprochez les lignes du relevé avec les paiements enregistrés.</p>
+  </div>
+
+  @if (auth.can('bank.create')) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouvelle ligne</button>
+  }
+</header>
+
+@if (summary(); as s) {
+  <section class="kpis">
+    <article class="kpi">
+      <span class="kpi-label">Non rapprochées</span>
+      <strong class="kpi-value">{{ s.unmatched }}</strong>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Rapprochées</span>
+      <strong class="kpi-value ok">{{ s.matched }}</strong>
+    </article>
+    <article class="kpi">
+      <span class="kpi-label">Ignorées</span>
+      <strong class="kpi-value">{{ s.ignored }}</strong>
+    </article>
+  </section>
+}
+
+<div class="toolbar">
+  <select [value]="statusFilter()" (change)="filterByStatus($any($event.target).value)" aria-label="Statut">
+    <option value="">Tous les statuts</option>
+    <option value="unmatched">Non rapprochées</option>
+    <option value="matched">Rapprochées</option>
+  </select>
+
+  <select [value]="directionFilter()" (change)="filterByDirection($any($event.target).value)" aria-label="Sens">
+    <option value="">Tous les sens</option>
+    <option value="in">Encaissement</option>
+    <option value="out">Décaissement</option>
+  </select>
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement du relevé…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Libellé</th>
+          <th>Sens</th>
+          <th class="right">Montant</th>
+          <th>Statut</th>
+          <th>Paiement</th>
+          <th class="right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines(); track line.id) {
+          <tr>
+            <td>{{ date(line.value_date) }}</td>
+            <td>
+              <strong>{{ line.label }}</strong>
+              @if (line.reference) {
+                <small class="muted">{{ line.reference }}</small>
+              }
+            </td>
+            <td>{{ line.direction_label }}</td>
+            <td class="right">{{ money(line.amount) }}</td>
+            <td><span class="status" [attr.data-status]="line.status">{{ line.status_label }}</span></td>
+            <td>{{ line.payment?.reference ?? '—' }}</td>
+            <td class="right actions">
+              @if (canReconcile() && line.status === 'unmatched') {
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="busyId() === line.id" (click)="openMatch(line)">
+                  Rapprocher
+                </button>
+              }
+              @if (canReconcile() && line.status === 'matched') {
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === line.id" (click)="unmatch(line)">
+                  Dérapprocher
+                </button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="empty">Aucune ligne de relevé.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (createOpen()) {
+  <div class="overlay" (click)="closeCreate()"></div>
+
+  <aside class="panel" role="dialog" aria-label="Nouvelle ligne de relevé">
+    <header>
+      <h2>Nouvelle ligne de relevé</h2>
+      <button type="button" class="close" (click)="closeCreate()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <label>
+        <span>Libellé *</span>
+        <input formControlName="label" placeholder="VIR CLIENT ATLAS" />
+        @if (form.controls.label.touched && form.controls.label.invalid) {
+          <small class="field-error">Le libellé est obligatoire.</small>
+        }
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Montant *</span>
+          <input type="number" min="0.01" step="0.01" formControlName="amount" />
+        </label>
+
+        <label>
+          <span>Sens</span>
+          <select formControlName="direction">
+            <option value="in">Encaissement</option>
+            <option value="out">Décaissement</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row">
+        <label>
+          <span>Date de valeur</span>
+          <input type="date" formControlName="value_date" />
+        </label>
+
+        <label>
+          <span>Référence</span>
+          <input formControlName="reference" placeholder="VIR-8891" />
+        </label>
+      </div>
+
+      <footer class="panel-actions">
+        <button type="button" class="btn btn-ghost" (click)="closeCreate()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </footer>
+    </form>
+  </aside>
+}
+
+@if (matchOpen() && matching(); as line) {
+  <div class="overlay" (click)="closeMatch()"></div>
+
+  <aside class="panel" role="dialog" aria-label="Rapprocher la ligne">
+    <header>
+      <h2>Rapprocher la ligne</h2>
+      <button type="button" class="close" (click)="closeMatch()" aria-label="Fermer">×</button>
+    </header>
+
+    <p class="summary">
+      {{ line.label }} · <strong>{{ money(line.amount) }}</strong> ·
+      {{ line.direction === 'in' ? 'Encaissement' : 'Décaissement' }}
+    </p>
+
+    @if (suggestionsLoading()) {
+      <p class="state">Recherche des paiements correspondants…</p>
+    } @else if (suggestions().length === 0) {
+      <p class="state">Aucun paiement non rapproché ne correspond à ce montant et ce sens.</p>
+    } @else {
+      <ul class="suggestions">
+        @for (payment of suggestions(); track payment.id) {
+          <li>
+            <div>
+              <strong>{{ payment.reference }}</strong>
+              <small class="muted">{{ date(payment.payment_date) }} · {{ payment.method_label }}</small>
+            </div>
+            <div class="suggestion-actions">
+              <span>{{ money(payment.amount) }}</span>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="busyId() === line.id" (click)="match(payment)">
+                Associer
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    <footer class="panel-actions">
+      <button type="button" class="btn btn-ghost" (click)="closeMatch()">Fermer</button>
+    </footer>
+  </aside>
+}
