@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { permissionGuard } from './core/auth/permission.guard';
 import { LoginPage } from './features/auth/login.page';
+import { BankPage } from './features/bank/bank.page';
 import { ClientsPage } from './features/clients/clients.page';
 import { DashboardPage } from './features/dashboard/dashboard.page';
 import { InvoicesPage } from './features/invoices/invoices.page';
@@ -61,6 +62,12 @@ export const routes: Routes = [
         component: InvoicesPage,
         title: 'Factures',
         canActivate: [permissionGuard('invoices.view')],
+      },
+      {
+        path: 'bank',
+        component: BankPage,
+        title: 'Rapprochement bancaire',
+        canActivate: [permissionGuard('bank.view')],
       },
     ],
   },
