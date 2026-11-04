@@ -1,0 +1,200 @@
+<header class="page-head">
+  <div>
+    <h1>Produits</h1>
+    <p class="muted">
+      @if (meta(); as m) {
+        {{ number(m.total) }} produit(s) au catalogue
+      } @else {
+        Chargement…
+      }
+    </p>
+  </div>
+
+  @if (auth.can('products.create')) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau produit</button>
+  }
+</header>
+
+<div class="toolbar">
+  <input
+    type="search"
+    placeholder="Rechercher un SKU, un nom…"
+    [value]="searchTerm()"
+    (change)="submitSearch($any($event.target).value)"
+    aria-label="Rechercher un produit"
+  />
+
+  <select [value]="categoryId() ?? ''" (change)="filterByCategory($any($event.target).value)" aria-label="Filtrer par catégorie">
+    <option value="">Toutes catégories</option>
+    @for (category of categories(); track category.id) {
+      <option [value]="category.id">{{ category.name }}</option>
+    }
+  </select>
+
+  <label class="checkbox">
+    <input type="checkbox" [checked]="lowStockOnly()" (change)="toggleLowStock($any($event.target).checked)" />
+    Stock faible
+  </label>
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement du catalogue…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Produit</th>
+          <th>Catégorie</th>
+          <th class="right">Achat</th>
+          <th class="right">Vente</th>
+          <th class="right">TVA</th>
+          <th class="right">Stock</th>
+          <th class="center">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (product of products(); track product.id) {
+          <tr>
+            <td><code>{{ product.sku }}</code></td>
+            <td>
+              <strong>{{ product.name }}</strong>
+              <small class="muted">{{ product.unit }}</small>
+            </td>
+            <td>{{ product.category?.name ?? '—' }}</td>
+            <td class="right">{{ money(product.purchase_price) }}</td>
+            <td class="right">{{ money(product.sale_price) }}</td>
+            <td class="right">{{ number(product.tax_rate) }} %</td>
+            <td class="right" [class.low]="product.is_low_stock">{{ stockLabel(product) }}</td>
+            <td class="center">
+              @if (!product.is_active) {
+                <span class="badge inactive">Inactif</span>
+              } @else if (product.is_low_stock) {
+                <span class="badge warning">À réapprovisionner</span>
+              } @else {
+                <span class="badge">Actif</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="empty">Aucun produit ne correspond aux filtres.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (panelOpen()) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel" role="dialog" [attr.aria-label]="editing() ? 'Modifier le produit' : 'Nouveau produit'">
+    <header>
+      <h2>{{ editing() ? 'Modifier le produit' : 'Nouveau produit' }}</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="row">
+        <label>
+          <span>SKU *</span>
+          <input formControlName="sku" placeholder="REF-0042" />
+          @if (form.controls.sku.touched && form.controls.sku.invalid) {
+            <small class="field-error">Le SKU est obligatoire.</small>
+          }
+        </label>
+
+        <label>
+          <span>Unité</span>
+          <input formControlName="unit" placeholder="carton" />
+        </label>
+      </div>
+
+      <label>
+        <span>Nom *</span>
+        <input formControlName="name" placeholder="Ramette A4 80g" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <small class="field-error">Le nom est obligatoire.</small>
+        }
+      </label>
+
+      <label>
+        <span>Catégorie</span>
+        <select formControlName="category_id">
+          <option [value]="null">—</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Prix d'achat</span>
+          <input type="number" min="0" step="0.01" formControlName="purchase_price" />
+        </label>
+
+        <label>
+          <span>Prix de vente</span>
+          <input type="number" min="0" step="0.01" formControlName="sale_price" />
+        </label>
+      </div>
+
+      <div class="row">
+        <label>
+          <span>TVA (%)</span>
+          <input type="number" min="0" max="100" formControlName="tax_rate" />
+        </label>
+
+        <label>
+          <span>Seuil de réappro.</span>
+          <input type="number" min="0" formControlName="reorder_level" />
+        </label>
+      </div>
+
+      <div class="row toggles">
+        <label class="checkbox">
+          <input type="checkbox" formControlName="track_stock" />
+          Suivre le stock
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="is_active" />
+          Actif
+        </label>
+      </div>
+
+      <footer class="panel-actions">
+        <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </footer>
+    </form>
+  </aside>
+}
