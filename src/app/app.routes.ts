@@ -10,6 +10,7 @@ import { InvoicesPage } from './features/invoices/invoices.page';
 import { OrdersPage } from './features/orders/orders.page';
 import { ProductsPage } from './features/products/products.page';
 import { QuotesPage } from './features/quotes/quotes.page';
+import { ReportsPage } from './features/reports/reports.page';
 import { StockPage } from './features/stock/stock.page';
 import { Shell } from './layout/shell/shell';
 
@@ -68,6 +69,12 @@ export const routes: Routes = [
         component: BankPage,
         title: 'Rapprochement bancaire',
         canActivate: [permissionGuard('bank.view')],
+      },
+      {
+        path: 'reports',
+        component: ReportsPage,
+        title: 'Rapports',
+        canActivate: [permissionGuard('reports.view')],
       },
     ],
   },
