@@ -1,0 +1,271 @@
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: #e9eef6;
+  border-radius: 10px;
+  margin-bottom: 16px;
+
+  button {
+    border: none;
+    background: transparent;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--erp-muted);
+    cursor: pointer;
+
+    &.active {
+      background: var(--erp-surface);
+      color: var(--erp-text);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+    }
+  }
+}
+
+.table-card {
+  background: var(--erp-surface);
+  border: 1px solid var(--erp-border);
+  border-radius: var(--erp-radius);
+  box-shadow: var(--erp-shadow);
+  overflow: hidden;
+}
+
+.matrix {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--erp-muted);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--erp-border);
+    background: #f8fafc;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+
+    small {
+      display: block;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+  }
+
+  tbody tr:hover {
+    background: #f8fafc;
+  }
+
+  .right {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .role-col {
+    text-align: center;
+    width: 110px;
+  }
+
+  .group-row td {
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--erp-muted);
+  }
+}
+
+.check {
+  color: var(--erp-success);
+  font-weight: 700;
+}
+
+.dash {
+  color: #cbd5e1;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #ecfdf5;
+  color: var(--erp-success);
+
+  &.inactive {
+    background: #f1f5f9;
+    color: var(--erp-muted);
+  }
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--erp-muted);
+}
+
+.state {
+  padding: 28px;
+  text-align: center;
+  color: var(--erp-muted);
+
+  &.error {
+    color: var(--erp-danger);
+  }
+}
+
+.empty {
+  text-align: center;
+  color: var(--erp-muted);
+  padding: 20px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 10;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 100vw);
+  background: var(--erp-surface);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  overflow-y: auto;
+  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.18);
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+  }
+
+  form {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  label {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--erp-muted);
+
+    input,
+    select {
+      padding: 9px 11px;
+      border: 1px solid var(--erp-border);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+      background: #fff;
+    }
+  }
+}
+
+.checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding-top: 22px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--erp-muted);
+}
+
+.close {
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--erp-muted);
+}
+
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.alert {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--erp-danger);
+  font-size: 13px;
+}
+
+.field-error {
+  color: var(--erp-danger);
+  font-weight: 500;
+}
