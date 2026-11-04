@@ -5,6 +5,7 @@ import { permissionGuard } from './core/auth/permission.guard';
 import { LoginPage } from './features/auth/login.page';
 import { ClientsPage } from './features/clients/clients.page';
 import { DashboardPage } from './features/dashboard/dashboard.page';
+import { InvoicesPage } from './features/invoices/invoices.page';
 import { OrdersPage } from './features/orders/orders.page';
 import { ProductsPage } from './features/products/products.page';
 import { QuotesPage } from './features/quotes/quotes.page';
@@ -54,6 +55,12 @@ export const routes: Routes = [
         component: QuotesPage,
         title: 'Devis',
         canActivate: [permissionGuard('quotes.view')],
+      },
+      {
+        path: 'invoices',
+        component: InvoicesPage,
+        title: 'Factures',
+        canActivate: [permissionGuard('invoices.view')],
       },
     ],
   },
