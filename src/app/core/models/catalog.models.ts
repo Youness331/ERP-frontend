@@ -60,3 +60,24 @@ export interface Warehouse {
   is_default: boolean;
   is_active: boolean;
 }
+
+export interface Supplier {
+  id: number;
+  code: string;
+  name: string;
+  company_name: string | null;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string;
+  ice: string | null;
+  tax_id: string | null;
+  rc: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
