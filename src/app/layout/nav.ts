@@ -13,4 +13,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Clients', icon: '👥', route: '/clients', permission: 'clients.view' },
   { label: 'Produits', icon: '📦', route: '/products', permission: 'products.view' },
   { label: 'Stock', icon: '🏭', route: '/stock', permission: 'stock.view' },
+  { label: 'Commandes', icon: '🧾', route: '/orders', permission: 'sales_orders.view' },
 ];

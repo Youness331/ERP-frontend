@@ -5,6 +5,7 @@ import { permissionGuard } from './core/auth/permission.guard';
 import { LoginPage } from './features/auth/login.page';
 import { ClientsPage } from './features/clients/clients.page';
 import { DashboardPage } from './features/dashboard/dashboard.page';
+import { OrdersPage } from './features/orders/orders.page';
 import { ProductsPage } from './features/products/products.page';
 import { StockPage } from './features/stock/stock.page';
 import { Shell } from './layout/shell/shell';
@@ -40,6 +41,12 @@ export const routes: Routes = [
         component: StockPage,
         title: 'Stock',
         canActivate: [permissionGuard('stock.view')],
+      },
+      {
+        path: 'orders',
+        component: OrdersPage,
+        title: 'Commandes',
+        canActivate: [permissionGuard('sales_orders.view')],
       },
     ],
   },
