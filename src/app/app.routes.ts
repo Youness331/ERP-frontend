@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './core/auth/auth.guard';
 import { permissionGuard } from './core/auth/permission.guard';
+import { AdminPage } from './features/admin/admin.page';
 import { LoginPage } from './features/auth/login.page';
 import { BankPage } from './features/bank/bank.page';
 import { ClientsPage } from './features/clients/clients.page';
@@ -75,6 +76,12 @@ export const routes: Routes = [
         component: ReportsPage,
         title: 'Rapports',
         canActivate: [permissionGuard('reports.view')],
+      },
+      {
+        path: 'admin',
+        component: AdminPage,
+        title: 'Administration',
+        canActivate: [permissionGuard('users.view')],
       },
     ],
   },

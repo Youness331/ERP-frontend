@@ -18,4 +18,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Factures', icon: '💶', route: '/invoices', permission: 'invoices.view' },
   { label: 'Rapprochement', icon: '🏦', route: '/bank', permission: 'bank.view' },
   { label: 'Rapports', icon: '📈', route: '/reports', permission: 'reports.view' },
+  { label: 'Administration', icon: '⚙️', route: '/admin', permission: 'users.view' },
 ];
