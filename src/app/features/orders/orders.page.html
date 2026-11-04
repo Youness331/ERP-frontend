@@ -1,0 +1,225 @@
+<header class="page-head">
+  <div>
+    <h1>Commandes</h1>
+    <p class="muted">Commandes clients et fournisseurs.</p>
+  </div>
+
+  @if (canManage()) {
+    <button type="button" class="btn btn-primary" (click)="openPanel()">
+      {{ tab() === 'sales' ? 'Nouvelle commande client' : 'Nouvelle commande fournisseur' }}
+    </button>
+  }
+</header>
+
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" [class.active]="tab() === 'sales'" (click)="selectTab('sales')">Ventes</button>
+  <button type="button" role="tab" [class.active]="tab() === 'purchases'" (click)="selectTab('purchases')">
+    Achats
+  </button>
+</div>
+
+<div class="toolbar">
+  <select [value]="statusFilter()" (change)="filterByStatus($any($event.target).value)" aria-label="Statut">
+    <option value="">Tous les statuts</option>
+    @if (tab() === 'sales') {
+      <option value="draft">Brouillon</option>
+      <option value="confirmed">Confirmée</option>
+      <option value="partially_delivered">Partiellement livrée</option>
+      <option value="delivered">Livrée</option>
+      <option value="invoiced">Facturée</option>
+      <option value="cancelled">Annulée</option>
+    } @else {
+      <option value="draft">Brouillon</option>
+      <option value="confirmed">Confirmée</option>
+      <option value="partially_received">Partiellement réceptionnée</option>
+      <option value="received">Réceptionnée</option>
+      <option value="cancelled">Annulée</option>
+    }
+  </select>
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement des commandes…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Référence</th>
+          <th>{{ tab() === 'sales' ? 'Client' : 'Fournisseur' }}</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th class="right">Total TTC</th>
+          <th class="right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (tab() === 'sales') {
+          @for (order of sales(); track order.id) {
+            <tr>
+              <td><strong>{{ order.reference }}</strong></td>
+              <td>{{ order.client?.name ?? '—' }}</td>
+              <td>{{ date(order.order_date) }}</td>
+              <td><span class="status" [attr.data-status]="order.status">{{ order.status_label }}</span></td>
+              <td class="right">{{ money(order.total) }}</td>
+              <td class="right actions">
+                @if (canConfirm(order)) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === order.id" (click)="confirmOrder(order)">
+                    Confirmer
+                  </button>
+                }
+                @if (canAdvance(order)) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === order.id" (click)="advanceOrder(order)">
+                    Livrer
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">Aucune commande client.</td></tr>
+          }
+        } @else {
+          @for (order of purchases(); track order.id) {
+            <tr>
+              <td><strong>{{ order.reference }}</strong></td>
+              <td>{{ order.supplier?.name ?? '—' }}</td>
+              <td>{{ date(order.order_date) }}</td>
+              <td><span class="status" [attr.data-status]="order.status">{{ order.status_label }}</span></td>
+              <td class="right">{{ money(order.total) }}</td>
+              <td class="right actions">
+                @if (canConfirm(order)) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === order.id" (click)="confirmOrder(order)">
+                    Confirmer
+                  </button>
+                }
+                @if (canAdvance(order)) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === order.id" (click)="advanceOrder(order)">
+                    Réceptionner
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">Aucune commande fournisseur.</td></tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (panelOpen()) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel wide" role="dialog" aria-label="Nouvelle commande">
+    <header>
+      <h2>{{ tab() === 'sales' ? 'Nouvelle commande client' : 'Nouvelle commande fournisseur' }}</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <div class="field-row">
+      <label>
+        <span>{{ tab() === 'sales' ? 'Client *' : 'Fournisseur *' }}</span>
+        <select [value]="partnerId() ?? ''" (change)="partnerId.set($any($event.target).value ? +$any($event.target).value : null)">
+          <option value="">—</option>
+          @if (tab() === 'sales') {
+            @for (client of clients(); track client.id) {
+              <option [value]="client.id">{{ client.code }} · {{ client.name }}</option>
+            }
+          } @else {
+            @for (supplier of suppliers(); track supplier.id) {
+              <option [value]="supplier.id">{{ supplier.code }} · {{ supplier.name }}</option>
+            }
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Entrepôt *</span>
+        <select [value]="warehouseId() ?? ''" (change)="warehouseId.set($any($event.target).value ? +$any($event.target).value : null)">
+          <option value="">—</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [value]="warehouse.id">{{ warehouse.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="lines-head">
+      <h3>Lignes</h3>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="addLine()">+ Ajouter une ligne</button>
+    </div>
+
+    <table class="lines">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Qté</th>
+          <th>P.U.</th>
+          <th>TVA</th>
+          <th class="right">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of draftLines(); track $index) {
+          <tr>
+            <td>
+              <select [value]="line.product_id ?? ''" (change)="selectProduct($index, $any($event.target).value)">
+                <option value="">—</option>
+                @for (product of products(); track product.id) {
+                  <option [value]="product.id">{{ product.sku }} · {{ product.name }}</option>
+                }
+              </select>
+            </td>
+            <td><input type="number" min="0" step="0.001" [value]="line.quantity" (input)="updateLine($index, 'quantity', $any($event.target).value)" /></td>
+            <td><input type="number" min="0" step="0.01" [value]="line.unit_price" (input)="updateLine($index, 'unit_price', $any($event.target).value)" /></td>
+            <td>{{ line.tax_rate }} %</td>
+            <td class="right">{{ money(line.quantity * line.unit_price) }}</td>
+            <td class="right">
+              <button type="button" class="icon" (click)="removeLine($index)" aria-label="Retirer la ligne">×</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="empty">Aucune ligne. Ajoutez un produit pour commencer.</td></tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div><span>Sous-total HT</span><strong>{{ money(subtotal()) }}</strong></div>
+      <div><span>TVA</span><strong>{{ money(taxTotal()) }}</strong></div>
+      <div class="grand"><span>Total TTC</span><strong>{{ money(total()) }}</strong></div>
+    </div>
+
+    <footer class="panel-actions">
+      <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+      <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Enregistrement…' : 'Enregistrer le brouillon' }}
+      </button>
+    </footer>
+  </aside>
+}
