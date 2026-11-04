@@ -1,0 +1,199 @@
+<header class="page-head">
+  <div>
+    <h1>Stock</h1>
+    <p class="muted">Niveaux par entrepôt et journal des mouvements.</p>
+  </div>
+
+  @if (auth.can('stock.manage')) {
+    <button type="button" class="btn btn-primary" (click)="openPanel()">Nouveau mouvement</button>
+  }
+</header>
+
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" [class.active]="tab() === 'levels'" (click)="selectTab('levels')">
+    Niveaux
+  </button>
+  <button type="button" role="tab" [class.active]="tab() === 'movements'" (click)="selectTab('movements')">
+    Mouvements
+  </button>
+</div>
+
+<div class="toolbar">
+  <input
+    type="search"
+    placeholder="Rechercher un produit…"
+    [value]="searchTerm()"
+    (change)="submitSearch($any($event.target).value)"
+    aria-label="Rechercher un produit"
+  />
+
+  <select [value]="warehouseId() ?? ''" (change)="filterByWarehouse($any($event.target).value)" aria-label="Entrepôt">
+    <option value="">Tous les entrepôts</option>
+    @for (warehouse of warehouses(); track warehouse.id) {
+      <option [value]="warehouse.id">{{ warehouse.name }}</option>
+    }
+  </select>
+
+  @if (tab() === 'movements') {
+    <select [value]="movementType()" (change)="filterByType($any($event.target).value)" aria-label="Type de mouvement">
+      <option value="">Tous les types</option>
+      <option value="in">Entrée</option>
+      <option value="out">Sortie</option>
+      <option value="adjustment">Ajustement</option>
+    </select>
+  }
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      @if (tab() === 'levels') {
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Entrepôt</th>
+            <th class="right">Quantité</th>
+            <th class="right">Réservé</th>
+            <th class="right">Disponible</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (level of levels(); track level.id) {
+            <tr>
+              <td>
+                <strong>{{ level.product?.name }}</strong>
+                <small class="muted">{{ level.product?.sku }}</small>
+              </td>
+              <td>{{ level.warehouse?.name ?? '—' }}</td>
+              <td class="right">{{ number(level.quantity) }}</td>
+              <td class="right">{{ number(level.reserved_quantity) }}</td>
+              <td class="right" [class.zero]="level.available_quantity <= 0">{{ number(level.available_quantity) }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">Aucun niveau de stock.</td></tr>
+          }
+        </tbody>
+      } @else {
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Produit</th>
+            <th>Entrepôt</th>
+            <th class="right">Quantité</th>
+            <th class="right">Après</th>
+            <th>Motif</th>
+            <th>Par</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (movement of movements(); track movement.id) {
+            <tr>
+              <td>{{ date(movement.created_at) }}</td>
+              <td><span class="badge" [attr.data-type]="movement.type">{{ movement.type_label }}</span></td>
+              <td>{{ movement.product?.name ?? '—' }}</td>
+              <td>{{ movement.warehouse?.name ?? '—' }}</td>
+              <td class="right">{{ number(movement.quantity) }}</td>
+              <td class="right">{{ number(movement.quantity_after) }}</td>
+              <td>{{ movement.reason ?? '—' }}</td>
+              <td>{{ movement.user?.name ?? '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="8" class="empty">Aucun mouvement enregistré.</td></tr>
+          }
+        </tbody>
+      }
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (panelOpen()) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel" role="dialog" aria-label="Nouveau mouvement de stock">
+    <header>
+      <h2>Nouveau mouvement</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <label>
+        <span>Produit *</span>
+        <select formControlName="product_id">
+          <option [value]="null">—</option>
+          @for (product of products(); track product.id) {
+            <option [value]="product.id">{{ product.sku }} · {{ product.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Entrepôt *</span>
+        <select formControlName="warehouse_id">
+          <option [value]="null">—</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [value]="warehouse.id">{{ warehouse.name }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Type</span>
+          <select formControlName="type">
+            <option value="in">Entrée</option>
+            <option value="out">Sortie</option>
+            <option value="adjustment">Ajustement (inventaire)</option>
+          </select>
+        </label>
+
+        <label>
+          <span>{{ isAdjustment() ? 'Nouvelle quantité' : 'Quantité' }}</span>
+          <input type="number" min="0" step="0.001" formControlName="quantity" />
+        </label>
+      </div>
+
+      <label>
+        <span>{{ isAdjustment() ? 'Coût unitaire (optionnel)' : 'Coût unitaire (optionnel)' }}</span>
+        <input type="number" min="0" step="0.01" formControlName="unit_cost" />
+      </label>
+
+      <label>
+        <span>Motif</span>
+        <input formControlName="reason" placeholder="Réception, casse, inventaire…" />
+      </label>
+
+      <footer class="panel-actions">
+        <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </footer>
+    </form>
+  </aside>
+}
