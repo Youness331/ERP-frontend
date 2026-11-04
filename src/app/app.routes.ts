@@ -7,6 +7,7 @@ import { ClientsPage } from './features/clients/clients.page';
 import { DashboardPage } from './features/dashboard/dashboard.page';
 import { OrdersPage } from './features/orders/orders.page';
 import { ProductsPage } from './features/products/products.page';
+import { QuotesPage } from './features/quotes/quotes.page';
 import { StockPage } from './features/stock/stock.page';
 import { Shell } from './layout/shell/shell';
 
@@ -47,6 +48,12 @@ export const routes: Routes = [
         component: OrdersPage,
         title: 'Commandes',
         canActivate: [permissionGuard('sales_orders.view')],
+      },
+      {
+        path: 'quotes',
+        component: QuotesPage,
+        title: 'Devis',
+        canActivate: [permissionGuard('quotes.view')],
       },
     ],
   },

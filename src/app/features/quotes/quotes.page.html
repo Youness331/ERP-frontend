@@ -1,0 +1,199 @@
+<header class="page-head">
+  <div>
+    <h1>Devis</h1>
+    <p class="muted">
+      @if (meta(); as m) {
+        {{ m.total }} devis
+      } @else {
+        Chargement…
+      }
+    </p>
+  </div>
+
+  @if (auth.can('quotes.create')) {
+    <button type="button" class="btn btn-primary" (click)="openPanel()">Nouveau devis</button>
+  }
+</header>
+
+<div class="toolbar">
+  <select [value]="statusFilter()" (change)="filterByStatus($any($event.target).value)" aria-label="Statut">
+    <option value="">Tous les statuts</option>
+    <option value="draft">Brouillon</option>
+    <option value="sent">Envoyé</option>
+    <option value="accepted">Accepté</option>
+    <option value="rejected">Refusé</option>
+    <option value="expired">Expiré</option>
+    <option value="converted">Converti</option>
+  </select>
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement des devis…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Référence</th>
+          <th>Client</th>
+          <th>Date</th>
+          <th>Validité</th>
+          <th>Statut</th>
+          <th class="right">Total TTC</th>
+          <th class="right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (quote of quotes(); track quote.id) {
+          <tr>
+            <td><strong>{{ quote.reference }}</strong></td>
+            <td>{{ quote.client?.name ?? '—' }}</td>
+            <td>{{ date(quote.quote_date) }}</td>
+            <td>{{ date(quote.valid_until) }}</td>
+            <td>
+              <span class="status" [attr.data-status]="quote.status">{{ quote.status_label }}</span>
+            </td>
+            <td class="right">{{ money(quote.total) }}</td>
+            <td class="right actions">
+              @if (canSend(quote)) {
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === quote.id" (click)="send(quote)">
+                  Envoyer
+                </button>
+              }
+              @if (canDecide(quote)) {
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === quote.id" (click)="accept(quote)">
+                  Accepter
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === quote.id" (click)="reject(quote)">
+                  Refuser
+                </button>
+              }
+              @if (canConvert(quote)) {
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="busyId() === quote.id" (click)="convert(quote)">
+                  Convertir
+                </button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="empty">Aucun devis.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (panelOpen()) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel wide" role="dialog" aria-label="Nouveau devis">
+    <header>
+      <h2>Nouveau devis</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <div class="field-row">
+      <label>
+        <span>Client *</span>
+        <select [value]="clientId() ?? ''" (change)="clientId.set($any($event.target).value ? +$any($event.target).value : null)">
+          <option value="">—</option>
+          @for (client of clients(); track client.id) {
+            <option [value]="client.id">{{ client.code }} · {{ client.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Entrepôt *</span>
+        <select [value]="warehouseId() ?? ''" (change)="warehouseId.set($any($event.target).value ? +$any($event.target).value : null)">
+          <option value="">—</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [value]="warehouse.id">{{ warehouse.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Valable jusqu'au (optionnel)</span>
+      <input type="date" [value]="validUntil()" (change)="validUntil.set($any($event.target).value)" />
+    </label>
+
+    <div class="lines-head">
+      <h3>Lignes</h3>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="addLine()">+ Ajouter une ligne</button>
+    </div>
+
+    <table class="lines">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Qté</th>
+          <th>P.U.</th>
+          <th>TVA</th>
+          <th class="right">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of draftLines(); track $index) {
+          <tr>
+            <td>
+              <select [value]="line.product_id ?? ''" (change)="selectProduct($index, $any($event.target).value)">
+                <option value="">—</option>
+                @for (product of products(); track product.id) {
+                  <option [value]="product.id">{{ product.sku }} · {{ product.name }}</option>
+                }
+              </select>
+            </td>
+            <td><input type="number" min="0" step="0.001" [value]="line.quantity" (input)="updateLine($index, 'quantity', $any($event.target).value)" /></td>
+            <td><input type="number" min="0" step="0.01" [value]="line.unit_price" (input)="updateLine($index, 'unit_price', $any($event.target).value)" /></td>
+            <td>{{ line.tax_rate }} %</td>
+            <td class="right">{{ money(line.quantity * line.unit_price) }}</td>
+            <td class="right">
+              <button type="button" class="icon" (click)="removeLine($index)" aria-label="Retirer la ligne">×</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="empty">Aucune ligne. Ajoutez un produit pour commencer.</td></tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div><span>Sous-total HT</span><strong>{{ money(totals().subtotal) }}</strong></div>
+      <div><span>TVA</span><strong>{{ money(totals().tax) }}</strong></div>
+      <div class="grand"><span>Total TTC</span><strong>{{ money(totals().total) }}</strong></div>
+    </div>
+
+    <footer class="panel-actions">
+      <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+      <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Enregistrement…' : 'Enregistrer le brouillon' }}
+      </button>
+    </footer>
+  </aside>
+}
