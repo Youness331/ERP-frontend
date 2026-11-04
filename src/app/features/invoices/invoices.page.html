@@ -1,0 +1,164 @@
+<header class="page-head">
+  <div>
+    <h1>Factures</h1>
+    <p class="muted">
+      @if (meta(); as m) {
+        {{ m.total }} facture(s)
+      } @else {
+        Chargement…
+      }
+    </p>
+  </div>
+</header>
+
+<div class="toolbar">
+  <select [value]="statusFilter()" (change)="filterByStatus($any($event.target).value)" aria-label="Statut">
+    <option value="">Tous les statuts</option>
+    <option value="draft">Brouillon</option>
+    <option value="sent">Envoyée</option>
+    <option value="partially_paid">Partiellement payée</option>
+    <option value="paid">Payée</option>
+    <option value="overdue">En retard</option>
+    <option value="cancelled">Annulée</option>
+  </select>
+
+  <label class="checkbox">
+    <input type="checkbox" [checked]="outstandingOnly()" (change)="toggleOutstanding($any($event.target).checked)" />
+    Impayées uniquement
+  </label>
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement des factures…</p>
+} @else {
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Référence</th>
+          <th>Client</th>
+          <th>Émise le</th>
+          <th>Échéance</th>
+          <th>Statut</th>
+          <th class="right">Total TTC</th>
+          <th class="right">Solde dû</th>
+          <th class="right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (invoice of invoices(); track invoice.id) {
+          <tr>
+            <td>
+              <strong>{{ invoice.reference }}</strong>
+              @if (invoice.type === 'credit_note') {
+                <small class="muted">{{ invoice.type_label }}</small>
+              }
+            </td>
+            <td>{{ invoice.client?.name ?? '—' }}</td>
+            <td>{{ date(invoice.issue_date) }}</td>
+            <td [class.overdue]="invoice.is_overdue">{{ date(invoice.due_date) }}</td>
+            <td><span class="status" [attr.data-status]="invoice.status">{{ invoice.status_label }}</span></td>
+            <td class="right">{{ money(invoice.total) }}</td>
+            <td class="right" [class.due]="invoice.balance_due > 0">{{ money(invoice.balance_due) }}</td>
+            <td class="right actions">
+              @if (canSend(invoice)) {
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === invoice.id" (click)="send(invoice)">
+                  Envoyer
+                </button>
+              }
+              @if (canPay(invoice)) {
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="busyId() === invoice.id" (click)="openPayment(invoice)">
+                  Encaisser
+                </button>
+              }
+              @if (canCredit(invoice)) {
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === invoice.id" (click)="credit(invoice)">
+                  Avoir
+                </button>
+              }
+              <button type="button" class="btn btn-ghost btn-sm" (click)="download(invoice)">PDF</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty">Aucune facture.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (meta(); as m) {
+    <footer class="pager">
+      <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+        Précédent
+      </button>
+      <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        (click)="goTo(m.current_page + 1)"
+        [disabled]="m.current_page >= m.last_page"
+      >
+        Suivant
+      </button>
+    </footer>
+  }
+}
+
+@if (panelOpen() && target(); as invoice) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel" role="dialog" aria-label="Encaissement">
+    <header>
+      <h2>Encaisser {{ invoice.reference }}</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    <p class="summary">
+      Solde dû : <strong>{{ money(invoice.balance_due) }}</strong>
+    </p>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="savePayment()" novalidate>
+      <label>
+        <span>Montant *</span>
+        <input type="number" min="0.01" step="0.01" formControlName="amount" />
+        @if (form.controls.amount.touched && form.controls.amount.invalid) {
+          <small class="field-error">Le montant doit être supérieur à zéro.</small>
+        }
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Moyen</span>
+          <select formControlName="method">
+            @for (method of methods; track method.value) {
+              <option [value]="method.value">{{ method.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <span>Date</span>
+          <input type="date" formControlName="payment_date" />
+        </label>
+      </div>
+
+      <label>
+        <span>Référence (chèque, virement…)</span>
+        <input formControlName="reference_number" placeholder="VIR-8891" />
+      </label>
+
+      <footer class="panel-actions">
+        <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Encaisser' }}
+        </button>
+      </footer>
+    </form>
+  </aside>
+}
