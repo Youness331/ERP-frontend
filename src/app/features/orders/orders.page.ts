@@ -10,16 +10,10 @@ import {
   PurchaseOrder,
   SalesOrder,
 } from '../../core/models/orders.models';
+import { computeTotals, OrderLineDraft } from '../../core/order-totals';
 import { OrdersApi } from './orders.api';
 
 type Tab = 'sales' | 'purchases';
-
-interface DraftLine {
-  product_id: number | null;
-  quantity: number;
-  unit_price: number;
-  tax_rate: number;
-}
 
 @Component({
   selector: 'app-orders-page',
@@ -51,23 +45,12 @@ export class OrdersPage implements OnInit {
 
   protected readonly partnerId = signal<number | null>(null);
   protected readonly warehouseId = signal<number | null>(null);
-  protected readonly draftLines = signal<DraftLine[]>([]);
+  protected readonly draftLines = signal<OrderLineDraft[]>([]);
 
   protected readonly money = formatMoney;
   protected readonly date = formatDate;
 
-  protected readonly subtotal = computed(() =>
-    this.draftLines().reduce((sum, line) => sum + line.quantity * line.unit_price, 0),
-  );
-
-  protected readonly taxTotal = computed(() =>
-    this.draftLines().reduce(
-      (sum, line) => sum + (line.quantity * line.unit_price * line.tax_rate) / 100,
-      0,
-    ),
-  );
-
-  protected readonly total = computed(() => this.subtotal() + this.taxTotal());
+  protected readonly totals = computed(() => computeTotals(this.draftLines()));
 
   protected readonly canManage = computed(() =>
     this.tab() === 'sales'
