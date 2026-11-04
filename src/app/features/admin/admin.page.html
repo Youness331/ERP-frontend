@@ -1,0 +1,204 @@
+<header class="page-head">
+  <div>
+    <h1>Administration</h1>
+    <p class="muted">Utilisateurs, rôles et matrice de permissions.</p>
+  </div>
+
+  @if (tab() === 'users' && canCreate()) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouvel utilisateur</button>
+  }
+</header>
+
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" [class.active]="tab() === 'users'" (click)="selectTab('users')">Utilisateurs</button>
+  @if (canViewRoles()) {
+    <button type="button" role="tab" [class.active]="tab() === 'roles'" (click)="selectTab('roles')">
+      Rôles & permissions
+    </button>
+  }
+</div>
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (tab() === 'users') {
+  @if (loading()) {
+    <p class="state">Chargement des utilisateurs…</p>
+  } @else {
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th>Statut</th>
+            <th>Dernière connexion</th>
+            <th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <strong>{{ user.name }}</strong>
+                @if (user.job_title) {
+                  <small class="muted">{{ user.job_title }}</small>
+                }
+              </td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role?.label ?? '—' }}</td>
+              <td>
+                <span class="badge" [class.inactive]="!user.is_active">{{ user.is_active ? 'Actif' : 'Désactivé' }}</span>
+              </td>
+              <td>{{ date(user.last_login_at?.slice(0, 10)) }}</td>
+              <td class="right actions">
+                @if (canUpdate()) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(user)">Modifier</button>
+                }
+                @if (canDelete()) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="remove(user)">Supprimer</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">Aucun utilisateur.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (meta(); as m) {
+      <footer class="pager">
+        <button type="button" class="btn btn-ghost" (click)="goTo(m.current_page - 1)" [disabled]="m.current_page <= 1">
+          Précédent
+        </button>
+        <span>Page {{ m.current_page }} / {{ m.last_page }}</span>
+        <button
+          type="button"
+          class="btn btn-ghost"
+          (click)="goTo(m.current_page + 1)"
+          [disabled]="m.current_page >= m.last_page"
+        >
+          Suivant
+        </button>
+      </footer>
+    }
+  }
+} @else {
+  <div class="table-card matrix">
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="module-col">Permission</th>
+          @for (role of roles(); track role.id) {
+            <th class="role-col">{{ role.label }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (group of permissionGroups(); track group.module) {
+          <tr class="group-row">
+            <td [attr.colspan]="roles().length + 1">{{ group.module }}</td>
+          </tr>
+          @for (permission of group.permissions; track permission.id) {
+            <tr>
+              <td>{{ permission.label }}</td>
+              @for (role of roles(); track role.id) {
+                <td class="role-col">
+                  @if (hasPermission(role, permission.name)) {
+                    <span class="check" aria-label="accordée">✓</span>
+                  } @else {
+                    <span class="dash" aria-label="non accordée">—</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (panelOpen()) {
+  <div class="overlay" (click)="closePanel()"></div>
+
+  <aside class="panel" role="dialog" [attr.aria-label]="editing() ? 'Modifier un utilisateur' : 'Nouvel utilisateur'">
+    <header>
+      <h2>{{ editing() ? 'Modifier l’utilisateur' : 'Nouvel utilisateur' }}</h2>
+      <button type="button" class="close" (click)="closePanel()" aria-label="Fermer">×</button>
+    </header>
+
+    @if (formError()) {
+      <p class="alert">{{ formError() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <label>
+        <span>Nom *</span>
+        <input formControlName="name" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <small class="field-error">Le nom est obligatoire.</small>
+        }
+      </label>
+
+      <label>
+        <span>Email *</span>
+        <input type="email" formControlName="email" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <small class="field-error">Adresse email invalide.</small>
+        }
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Rôle</span>
+          <select formControlName="role_id">
+            <option [value]="null">—</option>
+            @for (role of roles(); track role.id) {
+              <option [value]="role.id">{{ role.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="is_active" />
+          Compte actif
+        </label>
+      </div>
+
+      <div class="row">
+        <label>
+          <span>Téléphone</span>
+          <input formControlName="phone" />
+        </label>
+
+        <label>
+          <span>Fonction</span>
+          <input formControlName="job_title" />
+        </label>
+      </div>
+
+      <div class="row">
+        <label>
+          <span>{{ editing() ? 'Nouveau mot de passe' : 'Mot de passe *' }}</span>
+          <input type="password" formControlName="password" autocomplete="new-password" />
+        </label>
+
+        <label>
+          <span>Confirmation</span>
+          <input type="password" formControlName="password_confirmation" autocomplete="new-password" />
+        </label>
+      </div>
+
+      <p class="hint">Laissez le mot de passe vide pour le conserver.</p>
+
+      <footer class="panel-actions">
+        <button type="button" class="btn btn-ghost" (click)="closePanel()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </footer>
+    </form>
+  </aside>
+}
