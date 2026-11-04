@@ -1,0 +1,221 @@
+<header class="page-head">
+  <div>
+    <h1>Rapports</h1>
+    <p class="muted">Indicateurs commerciaux, achats, stock et créances.</p>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" [class.active]="tab() === 'sales'" (click)="selectTab('sales')">Ventes</button>
+  <button type="button" role="tab" [class.active]="tab() === 'purchases'" (click)="selectTab('purchases')">Achats</button>
+  <button type="button" role="tab" [class.active]="tab() === 'stock'" (click)="selectTab('stock')">Stock</button>
+  <button type="button" role="tab" [class.active]="tab() === 'aging'" (click)="selectTab('aging')">Créances</button>
+</div>
+
+@if (tab() === 'sales' || tab() === 'purchases') {
+  <div class="toolbar">
+    <label>
+      <span>Du</span>
+      <input type="date" [value]="from()" (change)="updateFrom($any($event.target).value)" />
+    </label>
+    <label>
+      <span>Au</span>
+      <input type="date" [value]="to()" (change)="updateTo($any($event.target).value)" />
+    </label>
+    <button type="button" class="btn btn-primary" (click)="refresh()">Actualiser</button>
+  </div>
+}
+
+@if (error()) {
+  <p class="state error">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="state">Chargement du rapport…</p>
+} @else {
+  @switch (tab()) {
+    @case ('sales') {
+      @if (sales(); as report) {
+        <section class="kpis">
+          <article class="kpi">
+            <span class="kpi-label">Chiffre d'affaires</span>
+            <strong class="kpi-value">{{ money(report.revenue) }}</strong>
+            <span class="kpi-foot">{{ number(report.invoice_count) }} facture(s)</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">TVA collectée</span>
+            <strong class="kpi-value">{{ money(report.tax_collected) }}</strong>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Remises accordées</span>
+            <strong class="kpi-value">{{ money(report.discounts_granted) }}</strong>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Panier moyen</span>
+            <strong class="kpi-value">{{ money(report.average_invoice) }}</strong>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2>CA par mois</h2>
+          <div class="chart" role="img" aria-label="Chiffre d'affaires par mois">
+            @for (point of report.by_month; track point.month) {
+              <div class="bar-wrapper" [title]="point.month + ' : ' + money(point.total)">
+                <div class="bar" [style.height]="barHeight(point.total)"></div>
+                <span class="bar-label">{{ point.month.slice(5) }}</span>
+              </div>
+            } @empty {
+              <p class="empty">Aucune facture sur la période.</p>
+            }
+          </div>
+        </section>
+
+        <section class="panels">
+          <article class="panel">
+            <h2>Top produits</h2>
+            <table class="table">
+              <thead>
+                <tr><th>Produit</th><th class="right">Qté</th><th class="right">CA</th></tr>
+              </thead>
+              <tbody>
+                @for (product of report.top_products; track product.product_id) {
+                  <tr>
+                    <td>
+                      <strong>{{ product.name }}</strong>
+                      <small class="muted">{{ product.sku }}</small>
+                    </td>
+                    <td class="right">{{ number(product.quantity) }}</td>
+                    <td class="right">{{ money(product.revenue) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="empty">Aucune vente.</td></tr>
+                }
+              </tbody>
+            </table>
+          </article>
+
+          <article class="panel">
+            <h2>Top clients</h2>
+            <table class="table">
+              <thead>
+                <tr><th>Client</th><th class="right">Factures</th><th class="right">CA</th></tr>
+              </thead>
+              <tbody>
+                @for (client of report.top_clients; track client.client_id) {
+                  <tr>
+                    <td>{{ client.client }}</td>
+                    <td class="right">{{ number(client.invoices) }}</td>
+                    <td class="right">{{ money(client.revenue) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="empty">Aucun client facturé.</td></tr>
+                }
+              </tbody>
+            </table>
+          </article>
+        </section>
+      }
+    }
+
+    @case ('purchases') {
+      @if (purchases(); as report) {
+        <section class="kpis">
+          <article class="kpi">
+            <span class="kpi-label">Dépenses</span>
+            <strong class="kpi-value">{{ money(report.spend) }}</strong>
+            <span class="kpi-foot">{{ number(report.order_count) }} commande(s)</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Déjà payé</span>
+            <strong class="kpi-value ok">{{ money(report.paid) }}</strong>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Reste à payer</span>
+            <strong class="kpi-value due">{{ money(report.outstanding) }}</strong>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2>Dépenses par fournisseur</h2>
+          <table class="table">
+            <thead>
+              <tr><th>Fournisseur</th><th class="right">Commandes</th><th class="right">Montant</th></tr>
+            </thead>
+            <tbody>
+              @for (supplier of report.by_supplier; track supplier.supplier_id) {
+                <tr>
+                  <td>{{ supplier.supplier }}</td>
+                  <td class="right">{{ number(supplier.orders) }}</td>
+                  <td class="right">{{ money(supplier.spend) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="empty">Aucune commande sur la période.</td></tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+    }
+
+    @case ('stock') {
+      @if (stock(); as report) {
+        <section class="kpis">
+          <article class="kpi">
+            <span class="kpi-label">Valeur totale du stock</span>
+            <strong class="kpi-value">{{ money(report.total_value) }}</strong>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2>Par entrepôt</h2>
+          <table class="table">
+            <thead>
+              <tr><th>Entrepôt</th><th class="right">Quantité</th><th class="right">Valeur</th></tr>
+            </thead>
+            <tbody>
+              @for (warehouse of report.by_warehouse; track warehouse.warehouse_id) {
+                <tr>
+                  <td>{{ warehouse.warehouse }}</td>
+                  <td class="right">{{ number(warehouse.quantity) }}</td>
+                  <td class="right">{{ money(warehouse.value) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="empty">Aucun stock valorisé.</td></tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+    }
+
+    @case ('aging') {
+      @if (aging(); as report) {
+        <section class="kpis">
+          <article class="kpi">
+            <span class="kpi-label">Total des créances</span>
+            <strong class="kpi-value">{{ money(report.total) }}</strong>
+            <span class="kpi-foot">{{ number(report.invoice_count) }} facture(s)</span>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2>Balance âgée</h2>
+          <table class="table">
+            <thead>
+              <tr><th>Tranche</th><th class="right">Factures</th><th class="right">Montant</th></tr>
+            </thead>
+            <tbody>
+              @for (bucket of report.buckets; track bucket.key) {
+                <tr>
+                  <td>{{ bucket.label }}</td>
+                  <td class="right">{{ number(bucket.count) }}</td>
+                  <td class="right" [class.due]="bucket.key === 'over_90' && bucket.amount > 0">
+                    {{ money(bucket.amount) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+    }
+  }
+}
